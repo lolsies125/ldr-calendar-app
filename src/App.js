@@ -5,6 +5,9 @@ const LDRCalendarApp = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showMeetupPopup, setShowMeetupPopup] = useState(false);
+  const [showHeartSignal, setShowHeartSignal] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [slideDirection, setSlideDirection] = useState('left');
 
   // Sample data - August 2025 starts on Friday
   const amelieCalendar = [
@@ -79,6 +82,79 @@ const LDRCalendarApp = () => {
     august: amelieCalendar
   };
 
+  // Page transition handler
+  const navigateToPage = (page, direction = 'left') => {
+    setIsTransitioning(true);
+    setSlideDirection(direction);
+    setTimeout(() => {
+      setCurrentPage(page);
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  // Send heartbeat signal
+  const sendHeartbeat = () => {
+    setShowHeartSignal(true);
+    if (navigator.vibrate) {
+      navigator.vibrate([200, 100, 200]);
+    }
+    setTimeout(() => {
+      setShowHeartSignal(false);
+    }, 3000);
+  };
+
+  // Check if schedule icon should be active
+  const isScheduleActive = () => {
+    return currentPage === 'amelieTimatable' || 
+           currentPage === 'liamTimetable' || 
+           currentPage === 'combinedTimetable' || 
+           currentPage === 'schedule';
+  };
+
+  // Check if messages icon should be active
+  const isMessagesActive = () => {
+    return currentPage === 'messages' || currentPage === 'chatLiam';
+  };
+
+  // Check if meetups icon should be active
+  const isMeetupsActive = () => {
+    return currentPage === 'meetups' || currentPage === 'planMeetup';
+  };
+
+  // Heartbeat Signal Popup
+  const HeartbeatSignal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 animate-fadeIn">
+      <div className="bg-gradient-to-br from-pink-100 to-purple-100 rounded-3xl p-8 w-80 text-center animate-pulse-slow">
+        <div className="mb-6">
+          <div className="inline-block p-6 bg-white rounded-full shadow-lg mb-4">
+            <Heart className="w-16 h-16 text-pink-500 animate-heartbeat" fill="currentColor" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Heartbeat Signal</h2>
+          <p className="text-gray-600 text-sm">Liam is thinking of you...</p>
+        </div>
+        
+        <div className="mb-6 bg-white rounded-lg p-4">
+          <svg className="w-full h-20" viewBox="0 0 200 60">
+            <path 
+              d="M 0,30 L 40,30 L 50,10 L 60,50 L 70,20 L 80,40 L 90,30 L 200,30" 
+              stroke="#ec4899" 
+              strokeWidth="3" 
+              fill="none"
+              className="animate-drawLine"
+            />
+          </svg>
+        </div>
+
+        <button 
+          onClick={() => setShowHeartSignal(false)}
+          className="bg-pink-500 text-white px-6 py-3 rounded-full font-semibold hover:bg-pink-600 transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+
   // Meetup Popup Component
   const MeetupPopup = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -121,7 +197,7 @@ const LDRCalendarApp = () => {
 
         <div className="flex gap-3 mt-6">
           <button 
-            onClick={() => { setShowMeetupPopup(false); setCurrentPage('planMeetup'); }} 
+            onClick={() => { setShowMeetupPopup(false); navigateToPage('planMeetup'); }} 
             className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold flex items-center justify-center"
           >
             <Check className="w-5 h-5 mr-2" />
@@ -141,23 +217,23 @@ const LDRCalendarApp = () => {
 
   const NavBar = () => (
     <div className="fixed bottom-0 left-0 right-0 max-w-sm mx-auto bg-white border-t border-gray-200 flex justify-around py-3">
-      <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center">
+      <button onClick={() => navigateToPage('home')} className="flex flex-col items-center">
         <Home className={`w-6 h-6 ${currentPage === 'home' ? 'text-blue-600' : 'text-gray-400'}`} />
         <span className="text-xs mt-1">Home</span>
       </button>
-      <button onClick={() => setCurrentPage('schedule')} className="flex flex-col items-center">
-        <Calendar className={`w-6 h-6 ${currentPage === 'schedule' ? 'text-blue-600' : 'text-gray-400'}`} />
+      <button onClick={() => navigateToPage('amelieTimatable')} className="flex flex-col items-center">
+        <Calendar className={`w-6 h-6 ${isScheduleActive() ? 'text-blue-600' : 'text-gray-400'}`} />
         <span className="text-xs mt-1">Schedule</span>
       </button>
-      <button onClick={() => setCurrentPage('messages')} className="flex flex-col items-center">
-        <MessageCircle className={`w-6 h-6 ${currentPage === 'messages' ? 'text-blue-600' : 'text-gray-400'}`} />
+      <button onClick={() => navigateToPage('messages')} className="flex flex-col items-center">
+        <MessageCircle className={`w-6 h-6 ${isMessagesActive() ? 'text-blue-600' : 'text-gray-400'}`} />
         <span className="text-xs mt-1">Messages</span>
       </button>
-      <button onClick={() => setCurrentPage('meetups')} className="flex flex-col items-center">
-        <Heart className={`w-6 h-6 ${currentPage === 'meetups' ? 'text-blue-600' : 'text-gray-400'}`} />
+      <button onClick={() => navigateToPage('meetups')} className="flex flex-col items-center">
+        <Heart className={`w-6 h-6 ${isMeetupsActive() ? 'text-blue-600' : 'text-gray-400'}`} />
         <span className="text-xs mt-1">Meetups</span>
       </button>
-      <button onClick={() => setCurrentPage('statistics')} className="flex flex-col items-center">
+      <button onClick={() => navigateToPage('statistics')} className="flex flex-col items-center">
         <Bell className={`w-6 h-6 ${currentPage === 'statistics' ? 'text-blue-600' : 'text-gray-400'}`} />
         <span className="text-xs mt-1">Statistics</span>
       </button>
@@ -231,13 +307,20 @@ const LDRCalendarApp = () => {
         </div>
 
         <div className="flex justify-center mb-8">
-          <div className="w-48 h-48 bg-pink-100 rounded-full flex items-center justify-center">
+          <button 
+            onClick={sendHeartbeat}
+            className="w-48 h-48 bg-pink-100 rounded-full flex items-center justify-center hover:bg-pink-200 transition-all active:scale-95"
+          >
             <Heart className="w-24 h-24 text-pink-500" fill="currentColor" />
-          </div>
+          </button>
         </div>
 
+        <p className="text-center text-gray-600 text-sm mb-8">
+          Tap the heart to send a signal to Liam
+        </p>
+
         <button 
-          onClick={() => setCurrentPage('amelieTimatable')}
+          onClick={() => navigateToPage('amelieTimatable')}
           className="w-full bg-white border-2 border-gray-300 py-4 rounded-lg flex items-center justify-center mb-4 shadow-sm"
         >
           <Calendar className="w-6 h-6 mr-3" />
@@ -245,7 +328,7 @@ const LDRCalendarApp = () => {
         </button>
 
         <button 
-          onClick={() => setCurrentPage('messages')}
+          onClick={() => navigateToPage('messages')}
           className="w-full bg-white border-2 border-gray-300 py-4 rounded-lg flex items-center justify-center shadow-sm"
         >
           <MessageCircle className="w-6 h-6 mr-3" />
@@ -261,7 +344,7 @@ const LDRCalendarApp = () => {
     <div className="min-h-screen bg-white pb-20">
       <div className="bg-white p-6 mb-4">
         <div className="flex items-center mb-6">
-          <ArrowLeft onClick={() => setCurrentPage('home')} className="w-6 h-6 mr-4" />
+          <ArrowLeft onClick={() => navigateToPage('home', 'right')} className="w-6 h-6 mr-4 cursor-pointer" />
           <h1 className="text-xl font-semibold">Statistics</h1>
         </div>
 
@@ -314,7 +397,7 @@ const LDRCalendarApp = () => {
       <div className="bg-white p-4 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <ArrowLeft onClick={() => setCurrentPage('home')} className="w-6 h-6 mr-3" />
+            <ArrowLeft onClick={() => navigateToPage('home', 'right')} className="w-6 h-6 mr-3 cursor-pointer" />
             <h1 className="text-lg font-semibold">Amelie's Timetable</h1>
           </div>
           <Settings className="w-6 h-6" />
@@ -322,8 +405,8 @@ const LDRCalendarApp = () => {
 
         <div className="flex gap-2 mb-4 justify-center">
           <button className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Amelie</button>
-          <button onClick={() => setCurrentPage('liamTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Liam</button>
-          <button onClick={() => setCurrentPage('combinedTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Combined</button>
+          <button onClick={() => navigateToPage('liamTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Liam</button>
+          <button onClick={() => navigateToPage('combinedTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Combined</button>
         </div>
 
         <h2 className="text-2xl font-bold mb-4 text-center">AUGUST 2025</h2>
@@ -345,9 +428,7 @@ const LDRCalendarApp = () => {
           {calendarData.august.map((day) => (
             <div 
               key={day.date}
-              className={`aspect-square flex items-center justify-center rounded-lg text-sm font-semibold
-                ${day.status === 'available' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}
-              `}
+              className={`aspect-square flex items-center justify-center rounded-lg text-sm font-semibold ${day.status === 'available' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}`}
             >
               {day.date}
             </div>
@@ -380,7 +461,7 @@ const LDRCalendarApp = () => {
           <button onClick={() => setShowMeetupPopup(true)} className="flex-1 bg-white border-2 border-gray-300 py-3 rounded-lg font-semibold">
             Suggest Meetup
           </button>
-          <button onClick={() => setCurrentPage('editSchedule')} className="flex-1 bg-white border-2 border-gray-300 py-3 rounded-lg font-semibold">
+          <button onClick={() => navigateToPage('editSchedule')} className="flex-1 bg-white border-2 border-gray-300 py-3 rounded-lg font-semibold">
             Edit Schedule
           </button>
         </div>
@@ -395,16 +476,16 @@ const LDRCalendarApp = () => {
       <div className="bg-white p-4 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <ArrowLeft onClick={() => setCurrentPage('amelieTimatable')} className="w-6 h-6 mr-3" />
+            <ArrowLeft onClick={() => navigateToPage('amelieTimatable', 'right')} className="w-6 h-6 mr-3 cursor-pointer" />
             <h1 className="text-lg font-semibold">Liam's Timetable</h1>
           </div>
           <Settings className="w-6 h-6" />
         </div>
 
         <div className="flex gap-2 mb-4 justify-center">
-          <button onClick={() => setCurrentPage('amelieTimatable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Amelie</button>
+          <button onClick={() => navigateToPage('amelieTimatable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Amelie</button>
           <button className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Liam</button>
-          <button onClick={() => setCurrentPage('combinedTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Combined</button>
+          <button onClick={() => navigateToPage('combinedTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Combined</button>
         </div>
 
         <h2 className="text-2xl font-bold mb-4 text-center">AUGUST 2025</h2>
@@ -426,9 +507,7 @@ const LDRCalendarApp = () => {
           {liamCalendar.map((day) => (
             <div 
               key={day.date}
-              className={`aspect-square flex items-center justify-center rounded-lg text-sm font-semibold
-                ${day.status === 'available' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}
-              `}
+              className={`aspect-square flex items-center justify-center rounded-lg text-sm font-semibold ${day.status === 'available' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}`}
             >
               {day.date}
             </div>
@@ -476,15 +555,15 @@ const LDRCalendarApp = () => {
       <div className="bg-white p-4 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <ArrowLeft onClick={() => setCurrentPage('amelieTimatable')} className="w-6 h-6 mr-3" />
+            <ArrowLeft onClick={() => navigateToPage('amelieTimatable', 'right')} className="w-6 h-6 mr-3 cursor-pointer" />
             <h1 className="text-lg font-semibold">Combined Timetable</h1>
           </div>
           <Settings className="w-6 h-6" />
         </div>
 
         <div className="flex gap-2 mb-4 justify-center">
-          <button onClick={() => setCurrentPage('amelieTimatable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Amelie</button>
-          <button onClick={() => setCurrentPage('liamTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Liam</button>
+          <button onClick={() => navigateToPage('amelieTimatable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Amelie</button>
+          <button onClick={() => navigateToPage('liamTimetable')} className="px-5 py-2 bg-gray-200 rounded-lg text-sm font-medium">Liam</button>
           <button className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">Combined</button>
         </div>
 
@@ -513,9 +592,7 @@ const LDRCalendarApp = () => {
             return (
               <div 
                 key={amelieDay.date}
-                className={`aspect-square flex items-center justify-center rounded-lg text-sm font-semibold
-                  ${bothAvailable ? 'bg-green-500 text-white' : oneAvailable ? 'bg-orange-400 text-white' : 'bg-pink-500 text-white'}
-                `}
+                className={`aspect-square flex items-center justify-center rounded-lg text-sm font-semibold ${bothAvailable ? 'bg-green-500 text-white' : oneAvailable ? 'bg-orange-400 text-white' : 'bg-pink-500 text-white'}`}
               >
                 {amelieDay.date}
               </div>
@@ -567,7 +644,7 @@ const LDRCalendarApp = () => {
     <div className="min-h-screen bg-white pb-20">
       <div className="bg-white p-6 mb-4">
         <div className="flex items-center mb-6">
-          <ArrowLeft onClick={() => setCurrentPage('home')} className="w-6 h-6 mr-4" />
+          <ArrowLeft onClick={() => navigateToPage('home', 'right')} className="w-6 h-6 mr-4 cursor-pointer" />
           <h1 className="text-xl font-semibold">Messages</h1>
         </div>
 
@@ -580,7 +657,7 @@ const LDRCalendarApp = () => {
         </div>
 
         <div className="space-y-4">
-          <div onClick={() => setCurrentPage('chatLiam')} className="flex items-center p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-100">
+          <div onClick={() => navigateToPage('chatLiam')} className="flex items-center p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-100">
             <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center mr-4">
               <User className="w-6 h-6 text-blue-600" />
             </div>
@@ -606,7 +683,7 @@ const LDRCalendarApp = () => {
     <div className="min-h-screen bg-white pb-20">
       <div className="bg-white p-6 mb-4 border-b">
         <div className="flex items-center">
-          <ArrowLeft onClick={() => setCurrentPage('messages')} className="w-6 h-6 mr-4" />
+          <ArrowLeft onClick={() => navigateToPage('messages', 'right')} className="w-6 h-6 mr-4 cursor-pointer" />
           <div className="w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
             <User className="w-5 h-5 text-blue-600" />
           </div>
@@ -667,7 +744,7 @@ const LDRCalendarApp = () => {
     <div className="min-h-screen bg-white pb-20">
       <div className="bg-white p-6 mb-4">
         <div className="flex items-center mb-6">
-          <ArrowLeft onClick={() => setCurrentPage('amelieTimatable')} className="w-6 h-6 mr-4" />
+          <ArrowLeft onClick={() => navigateToPage('amelieTimatable', 'right')} className="w-6 h-6 mr-4 cursor-pointer" />
           <h1 className="text-xl font-semibold">Meetup Details</h1>
         </div>
 
@@ -723,7 +800,7 @@ const LDRCalendarApp = () => {
     <div className="min-h-screen bg-white pb-20">
       <div className="bg-white p-6 mb-4">
         <div className="flex items-center mb-6">
-          <ArrowLeft onClick={() => setCurrentPage('amelieTimatable')} className="w-6 h-6 mr-4" />
+          <ArrowLeft onClick={() => navigateToPage('amelieTimatable', 'right')} className="w-6 h-6 mr-4 cursor-pointer" />
           <h1 className="text-xl font-semibold">Edit Schedule</h1>
         </div>
 
@@ -747,10 +824,7 @@ const LDRCalendarApp = () => {
             <button 
               key={day.date}
               onClick={() => setSelectedDate(day.date)}
-              className={`aspect-square flex items-center justify-center rounded-lg text-sm font-medium border-2
-                ${selectedDate === day.date ? 'border-blue-600' : 'border-transparent'}
-                ${day.status === 'available' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}
-              `}
+              className={`aspect-square flex items-center justify-center rounded-lg text-sm font-medium border-2 ${selectedDate === day.date ? 'border-blue-600' : 'border-transparent'} ${day.status === 'available' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}`}
             >
               {day.date}
             </button>
@@ -781,7 +855,7 @@ const LDRCalendarApp = () => {
       <div className="bg-white p-6 mb-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
-            <ArrowLeft onClick={() => setCurrentPage('home')} className="w-6 h-6 mr-4" />
+            <ArrowLeft onClick={() => navigateToPage('home', 'right')} className="w-6 h-6 mr-4 cursor-pointer" />
             <h1 className="text-xl font-semibold">Upcoming Meetups</h1>
           </div>
           <button onClick={() => setShowMeetupPopup(true)} className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
@@ -790,7 +864,7 @@ const LDRCalendarApp = () => {
         </div>
 
         <div className="space-y-4">
-          <div onClick={() => setCurrentPage('planMeetup')} className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl shadow-sm cursor-pointer hover:border-blue-300">
+          <div onClick={() => navigateToPage('planMeetup')} className="bg-gray-50 border-2 border-gray-200 p-4 rounded-xl shadow-sm cursor-pointer hover:border-blue-300">
             <div className="flex items-start">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
                 <span className="text-2xl">🍽️</span>
@@ -862,9 +936,45 @@ const LDRCalendarApp = () => {
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto bg-white min-h-screen shadow-xl">
-      {renderPage()}
+    <div className="w-full max-w-sm mx-auto bg-white min-h-screen shadow-xl overflow-hidden">
+      <div className={`transition-all duration-300 ${isTransitioning ? (slideDirection === 'left' ? '-translate-x-full opacity-0' : 'translate-x-full opacity-0') : 'translate-x-0 opacity-100'}`}>
+        {renderPage()}
+      </div>
       {showMeetupPopup && <MeetupPopup />}
+      {showHeartSignal && <HeartbeatSignal />}
+      <style>{`
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); }
+          25% { transform: scale(1.1); }
+          50% { transform: scale(1); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes drawLine {
+          from { stroke-dasharray: 0, 1000; }
+          to { stroke-dasharray: 1000, 0; }
+        }
+        .animate-heartbeat {
+          animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-in;
+        }
+        .animate-pulse-slow {
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .animate-drawLine {
+          stroke-dasharray: 1000;
+          stroke-dashoffset: 1000;
+          animation: drawLine 2s ease-in-out forwards;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: .8; }
+        }
+      `}</style>
     </div>
   );
 };
